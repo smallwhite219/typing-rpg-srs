@@ -86,47 +86,64 @@ export class WordSelector {
     stage: LearningStage,
     currentLevel: number
   ): number {
-    let score = 0;
     const isCoreTravelWord = word.tags?.some(tag =>
-      ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag)
+      ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag.toLowerCase().trim())
     ) || false;
 
-    if (!state) {
-      // 新單字：基礎分數
-      score = 100;
-    } else {
-      // 到期單字：基礎分數 + 間隔加成
-      const isDue = state.nr <= currentLevel;
-      if (isDue) {
-        score = 200;
+    // 1. 取得優先出現等級 (1~5)，預設研討會+旅遊為 3，其它基礎單字為 2
+    const priorityLevel = state?.pr ?? (isCoreTravelWord ? 3 : 2);
 
-        // 逾期越久，分數越高
-        const overdue = currentLevel - state.nr;
-        score += Math.min(overdue * 10, 50);
-
-        // 熟悉度越低，分數越高
-        const familiarity = this.srsEngine.getFamiliarityPercentage(state);
-        score += (100 - familiarity) * 0.5;
-      } else {
-        // 未到期單字：低分數
-        score = 10;
-      }
-
-      // 學習階段加成
-      switch (stage) {
-        case 'learning':
-          score += 30;
+    // 2. 取得自評加成分數：重壓(again)=4, 困難(hard)=3, 熟悉(good)=2, 簡單(easy)=1。新單字預設為 4
+    let ratingVal = 4;
+    if (state && state.fm) {
+      switch (state.fm) {
+        case 'again':
+          ratingVal = 4;
           break;
-        case 'review':
-          score += 15;
+        case 'hard':
+          ratingVal = 3;
           break;
-        case 'mastered':
-          score += 5;
+        case 'good':
+          ratingVal = 2;
+          break;
+        case 'easy':
+          ratingVal = 1;
           break;
       }
     }
 
-    if (isCoreTravelWord) {
+    // 3. 計算優先分數 (1~20)
+    const priorityScoreVal = priorityLevel * ratingVal;
+
+    // 4. 主要排序分數以優先分數為核心 (擴大差距，確保高優先分數一定先出現)
+    let score = priorityScoreVal * 100;
+
+    // 5. 結合 SRS 微調 (0~99)，在相同優先分數時發揮 SRS 排程微調作用
+    if (state) {
+      const isDue = state.nr <= currentLevel;
+      if (isDue) {
+        score += 50; // 到期基本分
+        const overdue = currentLevel - state.nr;
+        score += Math.min(overdue * 2, 30); // 逾期微調 (最高 30)
+        
+        const familiarity = this.srsEngine.getFamiliarityPercentage(state);
+        score += (100 - familiarity) * 0.15; // 熟悉度微調 (最高 15)
+      }
+      
+      // 學習階段微調
+      switch (stage) {
+        case 'learning':
+          score += 4;
+          break;
+        case 'review':
+          score += 2;
+          break;
+        case 'mastered':
+          score += 0;
+          break;
+      }
+    } else {
+      // 新單字微調加分
       score += 40;
     }
 

@@ -29,6 +29,8 @@ export interface WordSRSState {
   lu: string;
   /** stage - 學習階段 */
   st: LearningStage;
+  /** priority - 優先出現等級 (1~5) */
+  pr?: number;
 }
 
 /** 單字 SRS 狀態（完整版本，用於邏輯處理） */
