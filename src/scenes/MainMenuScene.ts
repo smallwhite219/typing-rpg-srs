@@ -4,6 +4,7 @@ import { SceneManager } from './SceneManager';
 import { VocabManager } from '../data/VocabManager';
 import { PlayerState } from '../state/PlayerState';
 import { CombatScene } from './CombatScene';
+import { WordListScene } from './WordListScene';
 import { DailyQuota } from '../system/DailyQuota';
 import { ProgressBar } from '../ui/ProgressBar';
 import { UI_STYLE } from '../ui/UIStyle';
@@ -191,6 +192,50 @@ export class MainMenuScene extends BaseScene {
  
     this.addChild(btn, btnText);
 
+    // Settings Button
+    const settingsBtn = new Graphics()
+      .roundRect(0, 0, 280, 50, 10)
+      .fill(0x3f3f46);
+    settingsBtn.pivot.set(140, 25);
+    settingsBtn.x = width / 2;
+    settingsBtn.y = 610;
+    settingsBtn.eventMode = 'static';
+    settingsBtn.cursor = 'pointer';
+    settingsBtn.stroke({ color: 0xffffff, width: 2, alpha: 0.3 });
+
+    const settingsBtnText = new Text({
+      text: '單字庫設定 (V)',
+      style: { 
+        fill: 0xffffff, 
+        fontSize: 20, 
+        fontWeight: 'bold',
+        fontFamily: UI_STYLE.FONTS.MONO,
+        dropShadow: { alpha: 0.5, blur: 4, color: 0x000000, distance: 2 }
+      }
+    });
+    settingsBtnText.anchor.set(0.5);
+    settingsBtnText.x = width / 2;
+    settingsBtnText.y = 610;
+
+    const openSettings = () => {
+      soundManager.playHit();
+      window.removeEventListener('keydown', keyboardListener);
+      SceneManager.switchScene(new WordListScene());
+    };
+
+    settingsBtn.on('pointerdown', openSettings);
+    settingsBtn.on('pointerover', () => { 
+        settingsBtn.alpha = 0.9;
+        settingsBtn.scale.set(1.05);
+        soundManager.playType();
+    });
+    settingsBtn.on('pointerout', () => { 
+        settingsBtn.alpha = 1;
+        settingsBtn.scale.set(1);
+    });
+
+    this.addChild(settingsBtn, settingsBtnText);
+
     // Keyboard listener
     const keyboardListener = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -202,6 +247,9 @@ export class MainMenuScene extends BaseScene {
       } else if (e.code === 'ArrowRight') {
         selectedWordCount = Math.min(20, selectedWordCount + 5);
         countText.text = `回合字數: ${selectedWordCount}`;
+      } else if (e.code === 'KeyV' || e.key === 'v' || e.key === 'V') {
+        e.preventDefault();
+        openSettings();
       }
     };
     window.addEventListener('keydown', keyboardListener);

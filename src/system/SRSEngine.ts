@@ -143,6 +143,7 @@ export class SRSEngine {
       cc: newCc,
       lu: now,
       st: finalStage,
+      pr: state.pr,
     };
   }
 
