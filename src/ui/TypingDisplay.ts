@@ -26,6 +26,7 @@ export class TypingDisplay extends Container {
   private readonly sentenceMinFontSize: number = 24;
   private readonly sentenceMaxFontSize: number = 42;
   private readonly sentenceMaxLines: number = 2;
+  private readonly longPromptMaxLines: number = 3;
 
   private availableWidth: number = 860;
   private panelWidth: number = 600;
@@ -257,7 +258,9 @@ export class TypingDisplay extends Container {
   }
 
   private applyPromptStyle(displayText: string) {
-    if (!this.config.isSentence) {
+    const usesWrappedLayout = this.shouldUseWrappedPromptLayout(displayText);
+
+    if (!usesWrappedLayout) {
       Object.assign(this.wordTextObj.style, {
         fontSize: 56,
         letterSpacing: 6,
@@ -271,12 +274,13 @@ export class TypingDisplay extends Container {
 
     const wrapWidth = this.getWrapWidth();
     let fontSize = this.pickSentenceFontSize(displayText.length);
+    const maxLines = this.config.isSentence ? this.sentenceMaxLines : this.longPromptMaxLines;
 
     for (let i = 0; i < 12; i++) {
       this.applySentenceStyle(fontSize, wrapWidth);
-      this.wordTextObj.text = displayText;
+      this.wordTextObj.text = this.wrapPromptText(displayText, fontSize, wrapWidth);
 
-      if (this.getSentenceLineCount(fontSize) <= this.sentenceMaxLines || fontSize <= this.sentenceMinFontSize) {
+      if (this.getSentenceLineCount(fontSize) <= maxLines || fontSize <= this.sentenceMinFontSize) {
         break;
       }
 
@@ -293,6 +297,53 @@ export class TypingDisplay extends Container {
       align: 'center',
       lineHeight: Math.round(fontSize * 1.3),
     });
+  }
+
+  private shouldUseWrappedPromptLayout(displayText: string): boolean {
+    return this.config.isSentence || displayText.length > 28 || /\s/.test(this.config.word);
+  }
+
+  private wrapPromptText(text: string, fontSize: number, wrapWidth: number): string {
+    const words = text.split(/(\s+)/);
+    const lines: string[] = [];
+    let currentLine = '';
+    const maxChars = Math.max(10, Math.floor(wrapWidth / (fontSize * 0.62)));
+
+    for (const word of words) {
+      if (word === '') continue;
+
+      const candidate = currentLine + word;
+      if (currentLine === '' || candidate.length <= maxChars) {
+        currentLine = candidate;
+        continue;
+      }
+
+      lines.push(currentLine.trimEnd());
+      currentLine = word.trimStart();
+
+      if (currentLine.length > maxChars) {
+        const chunks = this.breakLongToken(currentLine, maxChars);
+        lines.push(...chunks.slice(0, -1));
+        currentLine = chunks[chunks.length - 1] || '';
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine.trimEnd());
+    }
+
+    this.wordTextObj.style.fontSize = fontSize;
+    return lines.join('\n');
+  }
+
+  private breakLongToken(token: string, maxChars: number): string[] {
+    const chunks: string[] = [];
+
+    for (let start = 0; start < token.length; start += maxChars) {
+      chunks.push(token.slice(start, start + maxChars));
+    }
+
+    return chunks;
   }
 
   private getSentenceLineCount(fontSize: number): number {
@@ -331,14 +382,15 @@ export class TypingDisplay extends Container {
     const innerWidth = Math.max(300, this.panelWidth - this.panelPaddingX * 2);
     this.defTextObj.style.wordWrapWidth = innerWidth;
 
-    if (this.config.isSentence) {
+    if (this.shouldUseWrappedPromptLayout(this.wordTextObj.text)) {
       const displayText = this.wordTextObj.text;
       let fontSize = Number(this.wordTextObj.style.fontSize) || this.sentenceMaxFontSize;
+      const maxLines = this.config.isSentence ? this.sentenceMaxLines : this.longPromptMaxLines;
 
       for (let i = 0; i < 8; i++) {
         this.applySentenceStyle(fontSize, innerWidth);
-        this.wordTextObj.text = displayText;
-        if (this.getSentenceLineCount(fontSize) <= this.sentenceMaxLines || fontSize <= this.sentenceMinFontSize) {
+        this.wordTextObj.text = this.wrapPromptText(displayText.replace(/\n/g, ' '), fontSize, innerWidth);
+        if (this.getSentenceLineCount(fontSize) <= maxLines || fontSize <= this.sentenceMinFontSize) {
           break;
         }
         fontSize -= 2;
