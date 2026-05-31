@@ -1,0 +1,21 @@
+{
+  "name": "typing-rpg-srs",
+  "version": "1.0.0",
+  "description": "一款結合 **RPG 戰鬥**、**間隔重複記憶法 (SRS)** 與 **打字練習** 的英文學習遊戲。 玩家透過鍵入英文單字或句子來發動攻擊，系統根據 SM-2 演算法智慧排程複習，讓記憶在最佳時機被強化。",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "export:vocab": "node scripts/export-japan-vocab-csv.mjs",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pixi.js": "^8.17.1",
+    "typescript": "^6.0.2",
+    "vite": "^5.4.21"
+  }
+}
