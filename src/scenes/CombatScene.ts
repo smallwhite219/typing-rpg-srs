@@ -181,13 +181,14 @@ export class CombatScene extends BaseScene {
 
   private layoutCombatHud() {
     const { width, height } = SceneManager.getScreenSize();
+    const visibleHeight = Math.min(height, window.innerHeight || height);
 
     this.typingDisplay.x = width / 2;
-    this.typingDisplay.y = height / 2 + 100;
+    this.typingDisplay.y = visibleHeight / 2 + 100;
 
     let bounds = this.typingDisplay.getLocalBounds();
     let timerY = this.typingDisplay.y + bounds.y + bounds.height + 28;
-    const maxTimerY = height - 40;
+    const maxTimerY = visibleHeight - 40;
 
     if (timerY > maxTimerY) {
       this.typingDisplay.y -= (timerY - maxTimerY);
@@ -199,7 +200,7 @@ export class CombatScene extends BaseScene {
     this.timerBar.y = timerY;
 
     this.monsterObj.x = width / 2;
-    this.monsterBaseY = Math.min(height / 2 - 50, this.typingDisplay.y + bounds.y - 30);
+    this.monsterBaseY = Math.min(visibleHeight / 2 - 50, this.typingDisplay.y + bounds.y - 30);
     this.monsterObj.y = this.monsterBaseY;
   }
 
