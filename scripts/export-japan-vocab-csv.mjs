@@ -4,10 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const sourcePath = resolve(projectRoot, 'src/data/japanPresentationVocab.ts');
+const sourcePaths = [
+  resolve(projectRoot, 'src/data/japanPresentationVocab.ts'),
+  resolve(projectRoot, 'src/data/conferenceExpansionVocab.ts'),
+];
 const outputPath = resolve(projectRoot, 'data/japan-presentation-vocabulary.csv');
 
-const source = readFileSync(sourcePath, 'utf8');
+const source = sourcePaths.map(sourcePath => readFileSync(sourcePath, 'utf8')).join('\n');
 const blocks = [...source.matchAll(/\{\s*id:\s*'([^']+)',[\s\S]*?enabled:\s*true\s*\}/g)].map(match => match[0]);
 
 function readString(block, key) {

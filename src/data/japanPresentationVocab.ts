@@ -1,6 +1,7 @@
 import type { WordData } from '../types/game';
+import { conferenceExpansionVocab } from './conferenceExpansionVocab';
 
-export const japanPresentationVocab: WordData[] = [
+const baseJapanPresentationVocab: WordData[] = [
   {
     id: 'jp_travel_001',
     word: 'reservation',
@@ -853,5 +854,10 @@ export const japanPresentationVocab: WordData[] = [
     tags: ['japan-trip', 'sentence-pattern', 'conference', 'listening-typing-core'],
     enabled: true
   }
+];
+
+export const japanPresentationVocab: WordData[] = [
+  ...baseJapanPresentationVocab,
+  ...conferenceExpansionVocab,
 ];
 
