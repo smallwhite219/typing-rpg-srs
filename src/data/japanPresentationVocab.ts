@@ -1,5 +1,6 @@
 import type { WordData } from '../types/game';
 import { conferenceExpansionVocab } from './conferenceExpansionVocab';
+import { tbics15CompleteVocab, tbics15CoreVocab } from './tbics15PracticeVocab';
 
 const baseJapanPresentationVocab: WordData[] = [
   {
@@ -856,8 +857,17 @@ const baseJapanPresentationVocab: WordData[] = [
   }
 ];
 
+function withPracticeTier(words: WordData[], tier: string): WordData[] {
+  return words.map(word => ({
+    ...word,
+    tags: [...new Set([...(word.tags || []), tier])],
+  }));
+}
+
 export const japanPresentationVocab: WordData[] = [
-  ...baseJapanPresentationVocab,
-  ...conferenceExpansionVocab,
+  ...tbics15CoreVocab,
+  ...tbics15CompleteVocab,
+  ...withPracticeTier(conferenceExpansionVocab, 'practice-old'),
+  ...withPracticeTier(baseJapanPresentationVocab, 'practice-daily'),
 ];
 
