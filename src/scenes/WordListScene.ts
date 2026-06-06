@@ -3,6 +3,7 @@ import { BaseScene } from './BaseScene';
 import { SceneManager } from './SceneManager';
 import { MainMenuScene } from './MainMenuScene';
 import { VocabManager } from '../data/VocabManager';
+import { getDefaultPriorityLevel, getPracticeGroup, getPracticeGroupLabel } from '../data/vocabPriority';
 import { PlayerState } from '../state/PlayerState';
 import { SRSEngine } from '../system/SRSEngine';
 import { UI_STYLE } from '../ui/UIStyle';
@@ -192,11 +193,27 @@ export class WordListScene extends BaseScene {
         font-weight: bold;
         margin-right: 4px;
       }
-      .tag-badge.core {
+      .tag-badge.core15 {
         background-color: #7c3aed;
         color: #ffffff;
       }
-      .tag-badge.basic {
+      .tag-badge.complete15 {
+        background-color: #2563eb;
+        color: #ffffff;
+      }
+      .tag-badge.general {
+        background-color: #059669;
+        color: #ffffff;
+      }
+      .tag-badge.research-method {
+        background-color: #0e7490;
+        color: #ffffff;
+      }
+      .tag-badge.results-discussion {
+        background-color: #d97706;
+        color: #ffffff;
+      }
+      .tag-badge.technical {
         background-color: #4b5563;
         color: #ffffff;
       }
@@ -338,8 +355,12 @@ export class WordListScene extends BaseScene {
         
         <select id="type-filter" class="filter-select">
           <option value="all">所有分類</option>
-          <option value="core">研討會與旅遊單字 (預設優先度 3)</option>
-          <option value="basic">其它基礎單字 (預設優先度 2)</option>
+          <option value="core15">Core 15-min</option>
+          <option value="complete15">Complete 15-min</option>
+          <option value="general">General Vocabulary</option>
+          <option value="research-method">Research & Method</option>
+          <option value="results-discussion">Results & Discussion</option>
+          <option value="technical">Technical Terms</option>
         </select>
 
         <select id="status-filter" class="filter-select">
@@ -435,13 +456,10 @@ export class WordListScene extends BaseScene {
         word.partOfSpeech.toLowerCase().includes(query);
       if (!matchesQuery) return false;
 
-      // 2. 核心/基礎分類過濾
-      const isCoreTravelWord = word.tags?.some(tag =>
-        ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag.toLowerCase().trim())
-      ) || false;
+      // 2. 高層練習分類過濾，與 travel-english-planner Terms 頁一致
+      const practiceGroup = getPracticeGroup(word);
 
-      if (typeFilter === 'core' && !isCoreTravelWord) return false;
-      if (typeFilter === 'basic' && isCoreTravelWord) return false;
+      if (typeFilter !== 'all' && practiceGroup !== typeFilter) return false;
 
       // 3. 學習狀態過濾
       const state = srsData[word.id] || null;
@@ -478,12 +496,11 @@ export class WordListScene extends BaseScene {
 
     filteredWords.forEach(word => {
       const state = srsData[word.id] || null;
-      const isCore = word.tags?.some(tag =>
-        ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag.toLowerCase().trim())
-      ) || false;
+      const practiceGroup = getPracticeGroup(word);
+      const practiceGroupLabel = getPracticeGroupLabel(practiceGroup);
 
       // 當前優先度等級 (1~5)
-      const currentPr = this.modifiedPriorities.get(word.id) ?? state?.pr ?? (isCore ? 3 : 2);
+      const currentPr = this.modifiedPriorities.get(word.id) ?? state?.pr ?? getDefaultPriorityLevel(word);
       const isModified = this.modifiedPriorities.has(word.id);
 
       // 自評評分與加成
@@ -527,7 +544,7 @@ export class WordListScene extends BaseScene {
         <td style="color: #a1a1aa; font-family: monospace;">${word.partOfSpeech}</td>
         <td>${word.definition}</td>
         <td>
-          ${isCore ? '<span class="tag-badge core">研討會與旅遊</span>' : '<span class="tag-badge basic">基礎單字</span>'}
+          <span class="tag-badge ${practiceGroup}">${practiceGroupLabel}</span>
         </td>
         <td>${stageBadge}</td>
         <td>
@@ -570,11 +587,7 @@ export class WordListScene extends BaseScene {
    * 取得單字的優先分數
    */
   private getPriorityScore(word: WordData, state: WordSRSState | null): number {
-    const isCore = word.tags?.some(tag =>
-      ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag.toLowerCase().trim())
-    ) || false;
-
-    const currentPr = this.modifiedPriorities.get(word.id) ?? state?.pr ?? (isCore ? 3 : 2);
+    const currentPr = this.modifiedPriorities.get(word.id) ?? state?.pr ?? getDefaultPriorityLevel(word);
     
     let ratingFactor = 4;
     if (state && state.fm) {
@@ -592,11 +605,7 @@ export class WordListScene extends BaseScene {
    * 使用者在 UI 上設定優先級
    */
   private setWordPriority(wordId: string, level: number, word: WordData, state: WordSRSState | null) {
-    const isCore = word.tags?.some(tag =>
-      ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag.toLowerCase().trim())
-    ) || false;
-
-    const defaultLvl = isCore ? 3 : 2;
+    const defaultLvl = getDefaultPriorityLevel(word);
 
     if (level === defaultLvl && (!state || state.pr === undefined)) {
       // 如果設回預設值，且原本也沒有 pr 紀錄，可從 map 中移除
