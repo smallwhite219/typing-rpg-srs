@@ -11,6 +11,7 @@
  */
 
 import type { WordData, PlayerSRSData, WordSRSState, LearningStage } from '../types';
+import { getDefaultPriorityLevel } from '../data/vocabPriority';
 import { SRSEngine } from './SRSEngine';
 
 /** 選字結果 */
@@ -86,12 +87,8 @@ export class WordSelector {
     stage: LearningStage,
     currentLevel: number
   ): number {
-    const isCoreTravelWord = word.tags?.some(tag =>
-      ['japan-trip', 'conference', 'talper-presentation', 'listening-typing-core'].includes(tag.toLowerCase().trim())
-    ) || false;
-
-    // 1. 取得優先出現等級 (1~5)，預設研討會+旅遊為 3，其它基礎單字為 2
-    const priorityLevel = state?.pr ?? (isCoreTravelWord ? 3 : 2);
+    // 1. 取得優先出現等級 (1~5)：核心 5、全部 4、舊單字 3、日常 2、其它 1
+    const priorityLevel = state?.pr ?? getDefaultPriorityLevel(word);
 
     // 2. 取得自評加成分數：重壓(again)=4, 困難(hard)=3, 熟悉(good)=2, 簡單(easy)=1。新單字預設為 4
     let ratingVal = 4;

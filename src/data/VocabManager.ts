@@ -4,7 +4,6 @@ import { fallbackVocab } from './fallbackVocab';
 import { japanPresentationVocab } from './japanPresentationVocab';
 
 const VOCAB_CACHE_KEY = 'typing_rpg_vocab_cache';
-const CORE_VOCAB_PRIORITY_TAG = 'listening-typing-core';
 
 export class VocabManagerService {
   private vocabMap: Map<string, WordData> = new Map();
@@ -62,7 +61,8 @@ export class VocabManagerService {
   }
 
   /**
-   * 本地日本發表核心詞庫永遠置頂，避免雲端基礎字表覆蓋學習目標。
+   * 本地發表練習詞庫永遠置頂，順序由 japanPresentationVocab 定義：
+   * 核心 -> 完整 -> 舊單字 -> 日常。
    */
   private withCoreVocabulary(words: WordData[]): WordData[] {
     const merged: WordData[] = [];
@@ -72,12 +72,7 @@ export class VocabManagerService {
       const key = word.word.trim().toLowerCase();
       if (!key || seen.has(key)) continue;
 
-      merged.push({
-        ...word,
-        tags: word.tags?.includes(CORE_VOCAB_PRIORITY_TAG)
-          ? word.tags
-          : [...(word.tags || []), CORE_VOCAB_PRIORITY_TAG],
-      });
+      merged.push(word);
       seen.add(key);
     }
 
