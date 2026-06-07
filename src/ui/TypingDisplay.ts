@@ -1,6 +1,7 @@
 import { Container, Text, Graphics } from 'pixi.js';
 import { UI_STYLE } from './UIStyle';
 import { soundManager } from '../utils/SoundManager';
+import { isTypingCharMatch } from '../utils/textNormalization';
 
 export interface TypingConfig {
   word: string;
@@ -136,7 +137,7 @@ export class TypingDisplay extends Container {
 
     if (this.config.isSentence) {
       // Sentence mode: monkeys type (allow mistakes, proceed forward)
-      if (key.toLowerCase() === targetChar.toLowerCase()) {
+      if (isTypingCharMatch(key, targetChar)) {
         this.typedChars[this.currentIdx] = targetChar;
       } else {
         this.errorIndices.add(this.currentIdx);
@@ -153,7 +154,7 @@ export class TypingDisplay extends Container {
       }
     } else {
       // Word mode: strict typing (block on error)
-      if (key.toLowerCase() === targetChar.toLowerCase()) {
+      if (isTypingCharMatch(key, targetChar)) {
         this.currentIdx++;
         this.isErrorFlash = false;
         soundManager.playType();

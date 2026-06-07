@@ -16,6 +16,7 @@
 
 import type { WordData, PromptResult, GameConfig, LearningStage } from '../types';
 import { GAME_CONFIG as DEFAULT_GAME_CONFIG } from '../types';
+import { normalizeTypingText } from '../utils/textNormalization';
 
 export class PromptGenerator {
   private config: GameConfig;
@@ -103,22 +104,23 @@ export class PromptGenerator {
     typedLength: number;
     errorCount: number;
   } {
-    const target = prompt.targetText;
+    const target = normalizeTypingText(prompt.targetText);
+    const normalizedInput = normalizeTypingText(input);
     const typedLength = input.length;
     
     // 計算錯誤數
     let errorCount = 0;
-    const compareLength = Math.min(target.length, input.length);
+    const compareLength = Math.min(target.length, normalizedInput.length);
     
     for (let i = 0; i < compareLength; i++) {
-      if (input[i] !== target[i]) {
+      if (normalizedInput[i] !== target[i]) {
         errorCount++;
       }
     }
     
     // 長度差異也算錯誤
-    if (input.length < target.length) {
-      errorCount += target.length - input.length;
+    if (normalizedInput.length < target.length) {
+      errorCount += target.length - normalizedInput.length;
     }
     
     // 計算正確率
@@ -130,7 +132,7 @@ export class PromptGenerator {
     let isCorrect: boolean;
     if (prompt.type === 'word') {
       // 單字：必須完全正確
-      isCorrect = input === target;
+      isCorrect = normalizedInput === target;
     } else {
       // 句子：正確率 >= 80% 算通過
       isCorrect = accuracy >= this.config.sentencePassAccuracy;
